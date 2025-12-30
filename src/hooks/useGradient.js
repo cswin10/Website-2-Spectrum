@@ -3,6 +3,12 @@ import { useCallback, useRef } from 'react';
 // Render gradient at lower resolution for performance
 const RENDER_SCALE = 0.25;
 
+// How quickly colors fade to black (higher = faster falloff)
+const FALLOFF_STRENGTH = 0.00008;
+
+// Base darkness - colors blend with this
+const BASE_COLOR = { r: 5, g: 5, b: 5 };
+
 export function useGradient() {
   const gradientCacheRef = useRef(null);
   const lastNodeStateRef = useRef(null);
@@ -54,6 +60,7 @@ export function useGradient() {
       for (let x = 0; x < renderWidth; x++) {
         let totalWeight = 0;
         let r = 0, g = 0, b = 0;
+        let minDistSq = Infinity;
 
         for (const node of nodesData) {
           const dx = x - node.x;
@@ -64,12 +71,29 @@ export function useGradient() {
           r += node.r * weight;
           g += node.g * weight;
           b += node.b * weight;
+
+          if (distanceSquared < minDistSq) {
+            minDistSq = distanceSquared;
+          }
         }
 
+        // Calculate blended color
+        r = r / totalWeight;
+        g = g / totalWeight;
+        b = b / totalWeight;
+
+        // Apply falloff to black based on distance from nearest node
+        // Colors glow near nodes but fade to void in between
+        const falloff = Math.exp(-minDistSq * FALLOFF_STRENGTH);
+
+        r = BASE_COLOR.r + (r - BASE_COLOR.r) * falloff;
+        g = BASE_COLOR.g + (g - BASE_COLOR.g) * falloff;
+        b = BASE_COLOR.b + (b - BASE_COLOR.b) * falloff;
+
         const i = (y * renderWidth + x) * 4;
-        data[i] = r / totalWeight;
-        data[i + 1] = g / totalWeight;
-        data[i + 2] = b / totalWeight;
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
         data[i + 3] = 255;
       }
     }

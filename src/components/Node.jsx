@@ -12,16 +12,25 @@ function Node({
   const [isDragging, setIsDragging] = useState(false);
   const nodeRef = useRef(null);
   const colorInputRef = useRef(null);
-  const clickTimeRef = useRef(0);
-  const clickCountRef = useRef(0);
   const dragStartPosRef = useRef({ x: 0, y: 0 });
   const wasDraggedRef = useRef(false);
+  const longPressTimerRef = useRef(null);
 
   const x = node.displayX ?? node.x;
   const y = node.displayY ?? node.y;
 
+  // Handle right-click to open color picker
+  const handleContextMenu = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (colorInputRef.current) {
+      colorInputRef.current.click();
+    }
+  }, []);
+
   // Handle mouse down - start potential drag
   const handleMouseDown = useCallback((e) => {
+    if (e.button !== 0) return; // Only left click
     e.stopPropagation();
     e.preventDefault();
 
@@ -34,7 +43,7 @@ function Node({
     }
   }, [node.id, onDragStart]);
 
-  // Handle touch start for mobile
+  // Handle touch start for mobile (with long press for color picker)
   const handleTouchStart = useCallback((e) => {
     e.stopPropagation();
     if (e.touches.length > 0) {
@@ -42,6 +51,13 @@ function Node({
       setIsDragging(true);
       wasDraggedRef.current = false;
       dragStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+
+      // Long press to open color picker
+      longPressTimerRef.current = setTimeout(() => {
+        if (!wasDraggedRef.current && colorInputRef.current) {
+          colorInputRef.current.click();
+        }
+      }, 500);
 
       if (onDragStart) {
         onDragStart(node.id);
@@ -57,9 +73,13 @@ function Node({
       const dx = e.clientX - dragStartPosRef.current.x;
       const dy = e.clientY - dragStartPosRef.current.y;
 
-      // Consider it a drag if moved more than 5 pixels
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
         wasDraggedRef.current = true;
+        // Cancel long press if user starts dragging
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
       }
 
       if (onDrag) {
@@ -75,6 +95,10 @@ function Node({
 
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
           wasDraggedRef.current = true;
+          if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+          }
         }
 
         if (onDrag) {
@@ -85,6 +109,10 @@ function Node({
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
       if (onDragEnd) {
         onDragEnd(node.id);
       }
@@ -103,35 +131,12 @@ function Node({
     };
   }, [isDragging, node.id, onDrag, onDragEnd]);
 
-  // Handle click for color picker and double-click for delete
-  const handleClick = useCallback((e) => {
+  // Handle double-click to delete
+  const handleDoubleClick = useCallback((e) => {
     e.stopPropagation();
-
-    // Don't trigger click if we were dragging
-    if (wasDraggedRef.current) {
-      return;
-    }
-
-    const now = Date.now();
-    if (now - clickTimeRef.current < 300) {
-      // Double click - delete
-      clickCountRef.current = 0;
-      if (onDelete) {
-        onDelete(node.id);
-      }
-    } else {
-      // Single click - open color picker with delay to check for double click
-      clickCountRef.current = 1;
-      clickTimeRef.current = now;
-
-      setTimeout(() => {
-        if (clickCountRef.current === 1) {
-          // Trigger the color input
-          if (colorInputRef.current) {
-            colorInputRef.current.click();
-          }
-        }
-      }, 250);
+    e.preventDefault();
+    if (onDelete) {
+      onDelete(node.id);
     }
   }, [node.id, onDelete]);
 
@@ -151,13 +156,13 @@ function Node({
     height: 20,
     borderRadius: '50%',
     background: node.color,
-    border: `2px solid rgba(255, 255, 255, ${isHovered || isDragging ? 0.6 : 0.3})`,
+    border: `2px solid rgba(255, 255, 255, ${isHovered || isDragging ? 0.5 : 0.2})`,
     boxShadow: `
-      0 0 ${isHovered || isDragging ? 30 : 20}px ${node.color}${isHovered || isDragging ? '99' : '80'},
-      0 0 ${isHovered || isDragging ? 60 : 40}px ${node.color}${isHovered || isDragging ? '59' : '40'}
+      0 0 ${isHovered || isDragging ? 25 : 15}px ${node.color}80,
+      0 0 ${isHovered || isDragging ? 50 : 30}px ${node.color}40
     `,
     cursor: isDragging ? 'grabbing' : 'grab',
-    transform: `scale(${isDragging ? 1.3 : isHovered ? 1.2 : 1})`,
+    transform: `scale(${isDragging ? 1.3 : isHovered ? 1.15 : 1})`,
     transition: isDragging ? 'none' : 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
     zIndex: isDragging ? 1000 : 100,
     touchAction: 'none',
@@ -170,9 +175,9 @@ function Node({
       ref={nodeRef}
       style={nodeStyle}
       onMouseDown={handleMouseDown}
-      onMouseUp={handleClick}
+      onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
-      onTouchEnd={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
