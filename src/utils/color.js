@@ -69,22 +69,21 @@ export function hslToRgb(h, s, l) {
   };
 }
 
-// Generate a color based on position (X maps to hue, Y to saturation/lightness)
-// Darker, more subdued colors that glow from the void
+// Generate a vibrant color based on position (X maps to hue, Y to lightness)
 export function positionToColor(x, y, width, height) {
   const hue = (x / width) * 360;
-  const saturation = 50 + (y / height) * 30; // 50-80%
-  const lightness = 20 + ((1 - y / height) * 20); // 20-40%
+  const saturation = 80 + (y / height) * 20; // 80-100%
+  const lightness = 45 + ((1 - y / height) * 20); // 45-65%
 
   const rgb = hslToRgb(hue, saturation, lightness);
   return rgbToHex(rgb.r, rgb.g, rgb.b);
 }
 
-// Generate a random deep color
+// Generate a random vibrant color
 export function randomVibrantColor() {
   const hue = Math.random() * 360;
-  const saturation = 50 + Math.random() * 35; // 50-85%
-  const lightness = 20 + Math.random() * 20; // 20-40%
+  const saturation = 75 + Math.random() * 25; // 75-100%
+  const lightness = 45 + Math.random() * 20; // 45-65%
 
   const rgb = hslToRgb(hue, saturation, lightness);
   return rgbToHex(rgb.r, rgb.g, rgb.b);

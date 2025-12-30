@@ -148,18 +148,20 @@ function Node({
     }
   }, [node.id, onColorChange]);
 
+  const nodeSize = 24;
   const nodeStyle = {
     position: 'fixed',
-    left: x - 10,
-    top: y - 10,
-    width: 20,
-    height: 20,
+    left: x - nodeSize / 2,
+    top: y - nodeSize / 2,
+    width: nodeSize,
+    height: nodeSize,
     borderRadius: '50%',
     background: node.color,
-    border: `2px solid rgba(255, 255, 255, ${isHovered || isDragging ? 0.5 : 0.2})`,
+    border: `2px solid rgba(255, 255, 255, ${isHovered || isDragging ? 0.7 : 0.5})`,
     boxShadow: `
-      0 0 ${isHovered || isDragging ? 25 : 15}px ${node.color}80,
-      0 0 ${isHovered || isDragging ? 50 : 30}px ${node.color}40
+      0 0 ${isHovered || isDragging ? 40 : 30}px ${node.color},
+      0 0 ${isHovered || isDragging ? 80 : 60}px ${node.color}99,
+      0 0 ${isHovered || isDragging ? 120 : 90}px ${node.color}66
     `,
     cursor: isDragging ? 'grabbing' : 'grab',
     transform: `scale(${isDragging ? 1.3 : isHovered ? 1.15 : 1})`,

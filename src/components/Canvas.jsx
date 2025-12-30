@@ -1,8 +1,8 @@
 import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { useGradient } from '../hooks/useGradient';
 import { useTrail } from '../hooks/useTrail';
 import { getColorAtPosition } from '../utils/color';
 
+// Trail-only canvas - gradient is now CSS-based
 const Canvas = forwardRef(({
   nodes,
   trailEnabled,
@@ -13,16 +13,13 @@ const Canvas = forwardRef(({
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
   const lastParticleTimeRef = useRef(0);
-  const mousePositionRef = useRef({ x: 0, y: 0 });
   const dimensionsRef = useRef({ width: 0, height: 0 });
 
-  const { renderGradient, clearCache } = useGradient();
   const { addParticle, updateParticles, renderParticles, clearParticles } = useTrail();
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
-    clearTrail: clearParticles,
-    clearGradientCache: clearCache
+    clearTrail: clearParticles
   }));
 
   // Handle canvas resize
@@ -40,8 +37,7 @@ const Canvas = forwardRef(({
     canvas.style.height = `${height}px`;
 
     dimensionsRef.current = { width, height };
-    clearCache();
-  }, [clearCache]);
+  }, []);
 
   useEffect(() => {
     handleResize();
@@ -49,7 +45,7 @@ const Canvas = forwardRef(({
     return () => window.removeEventListener('resize', handleResize);
   }, [handleResize]);
 
-  // Animation loop
+  // Animation loop for trail particles only
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -58,13 +54,11 @@ const Canvas = forwardRef(({
     const dpr = window.devicePixelRatio || 1;
 
     const animate = () => {
-      const { width, height } = dimensionsRef.current;
+      // Clear canvas (transparent for overlay)
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       ctx.save();
       ctx.scale(dpr, dpr);
-
-      // Clear and render gradient
-      renderGradient(ctx, nodes, width, height);
 
       // Update and render trail particles
       if (trailEnabled) {
@@ -83,13 +77,12 @@ const Canvas = forwardRef(({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [nodes, trailEnabled, renderGradient, updateParticles, renderParticles]);
+  }, [trailEnabled, updateParticles, renderParticles]);
 
   // Handle mouse move for trail
   const handleMouseMove = useCallback((e) => {
     const x = e.clientX;
     const y = e.clientY;
-    mousePositionRef.current = { x, y };
 
     if (onMouseMove) {
       onMouseMove(e);
@@ -98,7 +91,7 @@ const Canvas = forwardRef(({
     // Add trail particles (throttled)
     if (trailEnabled && !isDragging) {
       const now = Date.now();
-      if (now - lastParticleTimeRef.current > 30) {
+      if (now - lastParticleTimeRef.current > 25) {
         const color = getColorAtPosition(x, y, nodes);
         addParticle(x, y, color);
         lastParticleTimeRef.current = now;
@@ -134,7 +127,9 @@ const Canvas = forwardRef(({
         width: '100%',
         height: '100%',
         cursor: 'default',
-        touchAction: 'none'
+        touchAction: 'none',
+        zIndex: 10,
+        pointerEvents: 'auto'
       }}
     />
   );
