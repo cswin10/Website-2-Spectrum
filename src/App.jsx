@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import GradientBackground from './components/GradientBackground';
 import Canvas from './components/Canvas';
 import Node from './components/Node';
 import Palette from './components/Palette';
@@ -11,17 +12,17 @@ import './styles/global.css';
 let nodeIdCounter = 0;
 const generateId = () => `node-${++nodeIdCounter}`;
 
-// Default nodes configuration
+// Default nodes configuration - vibrant colors
 const createDefaultNodes = () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
-  // Darker, more muted colors that glow from the void
+  // Vibrant, saturated colors that glow
   const defaults = [
-    { xPercent: 0.20, yPercent: 0.30, color: '#8b1e3f' },  // Deep rose
-    { xPercent: 0.80, yPercent: 0.20, color: '#4a1c7a' },  // Deep purple
-    { xPercent: 0.70, yPercent: 0.80, color: '#1a4b6e' },  // Deep ocean
-    { xPercent: 0.25, yPercent: 0.75, color: '#0d5c4a' }   // Deep teal
+    { xPercent: 0.20, yPercent: 0.30, color: '#ff006e' },  // Hot pink
+    { xPercent: 0.80, yPercent: 0.20, color: '#8338ec' },  // Electric purple
+    { xPercent: 0.70, yPercent: 0.80, color: '#3a86ff' },  // Bright blue
+    { xPercent: 0.25, yPercent: 0.75, color: '#06d6a0' }   // Cyan green
   ];
 
   return defaults.map(({ xPercent, yPercent, color }) => ({
@@ -33,7 +34,7 @@ const createDefaultNodes = () => {
     color,
     rgb: hexToRgb(color),
     animationOffset: Math.random() * Math.PI * 2,
-    animationRadius: 3 + Math.random() * 5
+    animationRadius: 5 + Math.random() * 8
   }));
 };
 
@@ -57,7 +58,7 @@ function App() {
           }
 
           // Calculate gentle circular drift
-          const drift = time * 0.0003 + node.animationOffset;
+          const drift = time * 0.0002 + node.animationOffset;
           const displayX = node.baseX + Math.cos(drift) * node.animationRadius;
           const displayY = node.baseY + Math.sin(drift * 0.7) * node.animationRadius;
 
@@ -110,9 +111,8 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Add new node on canvas click
+  // Add new node on canvas double-click
   const handleCanvasClick = useCallback((x, y) => {
-    // Don't add node if we just finished dragging
     if (isDragging) return;
 
     const color = positionToColor(x, y, window.innerWidth, window.innerHeight);
@@ -125,7 +125,7 @@ function App() {
       color,
       rgb: hexToRgb(color),
       animationOffset: Math.random() * Math.PI * 2,
-      animationRadius: 3 + Math.random() * 5
+      animationRadius: 5 + Math.random() * 8
     };
 
     setNodes(prev => [...prev, newNode]);
@@ -148,7 +148,6 @@ function App() {
   }, []);
 
   const handleDragEnd = useCallback(() => {
-    // Delay resetting isDragging to prevent click from adding a node
     setTimeout(() => {
       setIsDragging(false);
       setDraggingNodeId(null);
@@ -175,19 +174,18 @@ function App() {
   const handleClear = useCallback(() => {
     if (canvasRef.current) {
       canvasRef.current.clearTrail();
-      canvasRef.current.clearGradientCache();
     }
     setNodes(createDefaultNodes());
   }, []);
 
   // Randomize nodes
   const handleRandomize = useCallback(() => {
-    const count = 3 + Math.floor(Math.random() * 4); // 3-6 nodes
+    const count = 3 + Math.floor(Math.random() * 4);
     const newNodes = [];
 
     for (let i = 0; i < count; i++) {
-      const x = 0.1 * window.innerWidth + Math.random() * 0.8 * window.innerWidth;
-      const y = 0.1 * window.innerHeight + Math.random() * 0.8 * window.innerHeight;
+      const x = 0.15 * window.innerWidth + Math.random() * 0.7 * window.innerWidth;
+      const y = 0.15 * window.innerHeight + Math.random() * 0.7 * window.innerHeight;
       const color = randomVibrantColor();
 
       newNodes.push({
@@ -199,13 +197,10 @@ function App() {
         color,
         rgb: hexToRgb(color),
         animationOffset: Math.random() * Math.PI * 2,
-        animationRadius: 3 + Math.random() * 5
+        animationRadius: 5 + Math.random() * 8
       });
     }
 
-    if (canvasRef.current) {
-      canvasRef.current.clearGradientCache();
-    }
     setNodes(newNodes);
   }, []);
 
@@ -218,7 +213,11 @@ function App() {
   }, []);
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#050505' }}>
+      {/* CSS gradient background */}
+      <GradientBackground nodes={nodes} />
+
+      {/* Trail canvas overlay */}
       <Canvas
         ref={canvasRef}
         nodes={nodes}
@@ -227,6 +226,7 @@ function App() {
         onCanvasClick={handleCanvasClick}
       />
 
+      {/* Draggable nodes */}
       {nodes.map(node => (
         <Node
           key={node.id}
