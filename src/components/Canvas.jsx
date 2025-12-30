@@ -114,8 +114,8 @@ const Canvas = forwardRef(({
     }
   }, [handleMouseMove]);
 
-  // Handle canvas click
-  const handleClick = useCallback((e) => {
+  // Handle canvas double-click to add node
+  const handleDoubleClick = useCallback((e) => {
     if (onCanvasClick) {
       onCanvasClick(e.clientX, e.clientY);
     }
@@ -124,7 +124,7 @@ const Canvas = forwardRef(({
   return (
     <canvas
       ref={canvasRef}
-      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
       style={{
@@ -133,7 +133,7 @@ const Canvas = forwardRef(({
         left: 0,
         width: '100%',
         height: '100%',
-        cursor: 'crosshair',
+        cursor: 'default',
         touchAction: 'none'
       }}
     />

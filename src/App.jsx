@@ -16,11 +16,12 @@ const createDefaultNodes = () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
+  // Darker, more muted colors that glow from the void
   const defaults = [
-    { xPercent: 0.20, yPercent: 0.30, color: '#ff006e' },
-    { xPercent: 0.80, yPercent: 0.20, color: '#8338ec' },
-    { xPercent: 0.70, yPercent: 0.80, color: '#3a86ff' },
-    { xPercent: 0.25, yPercent: 0.75, color: '#06d6a0' }
+    { xPercent: 0.20, yPercent: 0.30, color: '#8b1e3f' },  // Deep rose
+    { xPercent: 0.80, yPercent: 0.20, color: '#4a1c7a' },  // Deep purple
+    { xPercent: 0.70, yPercent: 0.80, color: '#1a4b6e' },  // Deep ocean
+    { xPercent: 0.25, yPercent: 0.75, color: '#0d5c4a' }   // Deep teal
   ];
 
   return defaults.map(({ xPercent, yPercent, color }) => ({
